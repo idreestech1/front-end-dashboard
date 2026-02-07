@@ -43,7 +43,7 @@ export default function Dashboard({ user, onLogout }) {  // Accept props from pa
   const [stats, setStats] = useState({ total: 0, completed: 0, pending: 0, overdue: 0 });
 
   const api = axios.create({ 
-    baseURL: "http://localhost:5000/api",
+    baseURL: "https://back-end-auth-project.vercel.app/api",
     headers: {
       Authorization: `Bearer ${localStorage.getItem("token")}`
     }

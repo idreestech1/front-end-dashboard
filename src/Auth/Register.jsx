@@ -69,7 +69,7 @@ export default function Register() {
     setIsLoading(true);
     
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/register", {
+      const res = await axios.post("https://back-end-auth-project.vercel.app/api/auth/register", {
         username: form.username,
         email: form.email,
         password: form.password
