@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  FaPlus, 
-  FaSearch, 
-  FaSignOutAlt, 
+import {
+  FaPlus,
+  FaSearch,
+  FaSignOutAlt,
   FaFilter,
   FaCalendarAlt,
   FaCheckCircle,
@@ -19,12 +19,13 @@ import {
   FaBell,
   FaCheck,
   FaExclamationCircle,
-  FaCalendarDay
+  FaCalendarDay,
 } from "react-icons/fa";
 import { format, isToday, isTomorrow, isPast, parseISO } from "date-fns";
 import "./Dashboard.css";
 
-export default function Dashboard({ user, onLogout }) {  // Accept props from parent
+export default function Dashboard({ user, onLogout }) {
+  // Accept props from parent
   const [todos, setTodos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState("");
@@ -40,13 +41,20 @@ export default function Dashboard({ user, onLogout }) {  // Accept props from pa
   const [editDescription, setEditDescription] = useState("");
   const [editDueDate, setEditDueDate] = useState("");
   const [priority, setPriority] = useState("medium");
-  const [stats, setStats] = useState({ total: 0, completed: 0, pending: 0, overdue: 0 });
+  const [stats, setStats] = useState({
+    total: 0,
+    completed: 0,
+    pending: 0,
+    overdue: 0,
+  });
 
-  const api = axios.create({ 
-    baseURL: "https://back-end-auth-project.vercel.app/api",
+  const api = axios.create({
+    baseURL:
+      import.meta.env.VITE_API_URL ||
+      "https://back-end-auth-project.vercel.app/api",
     headers: {
-      Authorization: `Bearer ${localStorage.getItem("token")}`
-    }
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
   });
 
   const fetchTodos = async () => {
@@ -65,12 +73,12 @@ export default function Dashboard({ user, onLogout }) {  // Accept props from pa
 
   const updateStats = (todoList) => {
     const total = todoList.length;
-    const completed = todoList.filter(t => t.completed).length;
-    const pending = todoList.filter(t => !t.completed).length;
-    const overdue = todoList.filter(t => 
-      !t.completed && t.dueDate && isPast(parseISO(t.dueDate))
+    const completed = todoList.filter((t) => t.completed).length;
+    const pending = todoList.filter((t) => !t.completed).length;
+    const overdue = todoList.filter(
+      (t) => !t.completed && t.dueDate && isPast(parseISO(t.dueDate)),
     ).length;
-    
+
     setStats({ total, completed, pending, overdue });
   };
 
@@ -82,19 +90,19 @@ export default function Dashboard({ user, onLogout }) {  // Accept props from pa
   const addTodo = async (e) => {
     e.preventDefault();
     if (!title.trim()) return;
-    
+
     try {
-      const newTodo = { 
-        title, 
-        description, 
+      const newTodo = {
+        title,
+        description,
         dueDate: dueDate || undefined,
-        priority
+        priority,
       };
-      
+
       const res = await api.post("/todos", newTodo);
       setTodos((s) => [res.data, ...s]);
       updateStats([res.data, ...todos]);
-      
+
       // Reset form
       setTitle("");
       setDescription("");
@@ -109,8 +117,8 @@ export default function Dashboard({ user, onLogout }) {  // Accept props from pa
   const toggleComplete = async (id, completed) => {
     try {
       await api.put(`/todos/${id}`, { completed: !completed });
-      const updated = todos.map((t) => 
-        t._id === id ? { ...t, completed: !completed } : t
+      const updated = todos.map((t) =>
+        t._id === id ? { ...t, completed: !completed } : t,
       );
       setTodos(updated);
       updateStats(updated);
@@ -121,7 +129,7 @@ export default function Dashboard({ user, onLogout }) {  // Accept props from pa
 
   const removeTodo = async (id) => {
     if (!window.confirm("Are you sure you want to delete this todo?")) return;
-    
+
     try {
       await api.delete(`/todos/${id}`);
       const updated = todos.filter((t) => t._id !== id);
@@ -141,15 +149,15 @@ export default function Dashboard({ user, onLogout }) {  // Accept props from pa
 
   const saveEdit = async (id) => {
     try {
-      const updated = { 
-        title: editTitle, 
-        description: editDescription, 
-        dueDate: editDueDate || undefined 
+      const updated = {
+        title: editTitle,
+        description: editDescription,
+        dueDate: editDueDate || undefined,
       };
-      
+
       await api.put(`/todos/${id}`, updated);
-      const updatedTodos = todos.map((t) => 
-        t._id === id ? { ...t, ...updated } : t
+      const updatedTodos = todos.map((t) =>
+        t._id === id ? { ...t, ...updated } : t,
       );
       setTodos(updatedTodos);
       setEditingId(null);
@@ -174,26 +182,36 @@ export default function Dashboard({ user, onLogout }) {  // Accept props from pa
     return "future";
   };
 
-  const filteredTodos = todos.filter(todo => {
-    const matchesQuery = !query || 
+  const filteredTodos = todos.filter((todo) => {
+    const matchesQuery =
+      !query ||
       todo.title.toLowerCase().includes(query.toLowerCase()) ||
-      (todo.description && todo.description.toLowerCase().includes(query.toLowerCase()));
-    
-    const matchesFilter = filter === "all" ||
+      (todo.description &&
+        todo.description.toLowerCase().includes(query.toLowerCase()));
+
+    const matchesFilter =
+      filter === "all" ||
       (filter === "completed" && todo.completed) ||
       (filter === "pending" && !todo.completed) ||
-      (filter === "overdue" && !todo.completed && todo.dueDate && isPast(parseISO(todo.dueDate)));
-    
+      (filter === "overdue" &&
+        !todo.completed &&
+        todo.dueDate &&
+        isPast(parseISO(todo.dueDate)));
+
     return matchesQuery && matchesFilter;
   });
 
   const sortedTodos = [...filteredTodos].sort((a, b) => {
     let comparison = 0;
-    
+
     switch (sortBy) {
       case "date":
-        const dateA = a.dueDate ? new Date(a.dueDate) : new Date(8640000000000000);
-        const dateB = b.dueDate ? new Date(b.dueDate) : new Date(8640000000000000);
+        const dateA = a.dueDate
+          ? new Date(a.dueDate)
+          : new Date(8640000000000000);
+        const dateB = b.dueDate
+          ? new Date(b.dueDate)
+          : new Date(8640000000000000);
         comparison = dateA - dateB;
         break;
       case "title":
@@ -201,10 +219,11 @@ export default function Dashboard({ user, onLogout }) {  // Accept props from pa
         break;
       case "priority":
         const priorityOrder = { high: 3, medium: 2, low: 1 };
-        comparison = (priorityOrder[a.priority] || 0) - (priorityOrder[b.priority] || 0);
+        comparison =
+          (priorityOrder[a.priority] || 0) - (priorityOrder[b.priority] || 0);
         break;
     }
-    
+
     return sortOrder === "asc" ? comparison : -comparison;
   });
 
@@ -214,11 +233,11 @@ export default function Dashboard({ user, onLogout }) {  // Accept props from pa
 
   const clearAllCompleted = async () => {
     if (!window.confirm("Delete all completed tasks?")) return;
-    
+
     try {
-      const completedIds = todos.filter(t => t.completed).map(t => t._id);
-      await Promise.all(completedIds.map(id => api.delete(`/todos/${id}`)));
-      const updated = todos.filter(t => !t.completed);
+      const completedIds = todos.filter((t) => t.completed).map((t) => t._id);
+      await Promise.all(completedIds.map((id) => api.delete(`/todos/${id}`)));
+      const updated = todos.filter((t) => !t.completed);
       setTodos(updated);
       updateStats(updated);
     } catch (err) {
@@ -243,7 +262,7 @@ export default function Dashboard({ user, onLogout }) {  // Accept props from pa
           </motion.div>
 
           <div className="header-controls">
-            <motion.div 
+            <motion.div
               className="search-container"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -259,14 +278,18 @@ export default function Dashboard({ user, onLogout }) {  // Accept props from pa
             </motion.div>
 
             {user && (
-              <motion.div 
+              <motion.div
                 className="user-profile"
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 whileHover={{ scale: 1.05 }}
               >
                 {user.avatar ? (
-                  <img src={user.avatar} alt={user.name} className="user-avatar" />
+                  <img
+                    src={user.avatar}
+                    alt={user.name}
+                    className="user-avatar"
+                  />
                 ) : (
                   <FaUserCircle className="user-icon" />
                 )}
@@ -275,7 +298,7 @@ export default function Dashboard({ user, onLogout }) {  // Accept props from pa
             )}
 
             <motion.button
-              onClick={onLogout}  // Use passed logout function
+              onClick={onLogout} // Use passed logout function
               className="logout-btn"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -289,7 +312,7 @@ export default function Dashboard({ user, onLogout }) {  // Accept props from pa
 
       {/* Stats Cards */}
       <div className="stats-grid">
-        <motion.div 
+        <motion.div
           className="stat-card total"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -300,7 +323,7 @@ export default function Dashboard({ user, onLogout }) {  // Accept props from pa
           <div className="stat-trend">All activities</div>
         </motion.div>
 
-        <motion.div 
+        <motion.div
           className="stat-card completed"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -310,11 +333,13 @@ export default function Dashboard({ user, onLogout }) {  // Accept props from pa
           <h3>Completed</h3>
           <p className="stat-number">{stats.completed}</p>
           <div className="stat-trend">
-            {stats.total > 0 ? `${Math.round((stats.completed / stats.total) * 100)}% done` : "No tasks"}
+            {stats.total > 0
+              ? `${Math.round((stats.completed / stats.total) * 100)}% done`
+              : "No tasks"}
           </div>
         </motion.div>
 
-        <motion.div 
+        <motion.div
           className="stat-card pending"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -326,7 +351,7 @@ export default function Dashboard({ user, onLogout }) {  // Accept props from pa
           <div className="stat-trend">Need attention</div>
         </motion.div>
 
-        <motion.div 
+        <motion.div
           className="stat-card overdue"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -388,7 +413,11 @@ export default function Dashboard({ user, onLogout }) {  // Accept props from pa
                 </button>
               ))}
               <button onClick={toggleSortOrder} className="sort-order-btn">
-                {sortOrder === "asc" ? <FaSortAmountUp /> : <FaSortAmountDown />}
+                {sortOrder === "asc" ? (
+                  <FaSortAmountUp />
+                ) : (
+                  <FaSortAmountDown />
+                )}
               </button>
             </div>
           </div>
@@ -419,11 +448,14 @@ export default function Dashboard({ user, onLogout }) {  // Accept props from pa
               >
                 <div className="form-header">
                   <h3>Add New Task</h3>
-                  <button onClick={() => setShowForm(false)} className="close-btn">
+                  <button
+                    onClick={() => setShowForm(false)}
+                    className="close-btn"
+                  >
                     <FaTimes />
                   </button>
                 </div>
-                
+
                 <form onSubmit={addTodo}>
                   <div className="form-group">
                     <input
@@ -435,7 +467,7 @@ export default function Dashboard({ user, onLogout }) {  // Accept props from pa
                       required
                     />
                   </div>
-                  
+
                   <div className="form-group">
                     <textarea
                       value={description}
@@ -445,7 +477,7 @@ export default function Dashboard({ user, onLogout }) {  // Accept props from pa
                       rows="3"
                     />
                   </div>
-                  
+
                   <div className="form-row">
                     <div className="form-group">
                       <label>
@@ -459,7 +491,7 @@ export default function Dashboard({ user, onLogout }) {  // Accept props from pa
                         className="form-input"
                       />
                     </div>
-                    
+
                     <div className="form-group">
                       <label>Priority</label>
                       <div className="priority-selector">
@@ -477,13 +509,17 @@ export default function Dashboard({ user, onLogout }) {  // Accept props from pa
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="form-actions">
                     <button type="submit" className="submit-btn">
                       <FaPlus />
                       Add Task
                     </button>
-                    <button type="button" onClick={() => setShowForm(false)} className="cancel-btn">
+                    <button
+                      type="button"
+                      onClick={() => setShowForm(false)}
+                      className="cancel-btn"
+                    >
                       Cancel
                     </button>
                   </div>
@@ -497,7 +533,8 @@ export default function Dashboard({ user, onLogout }) {  // Accept props from pa
             <div className="section-header">
               <h2>My Tasks</h2>
               <div className="tasks-count">
-                {filteredTodos.length} task{filteredTodos.length !== 1 ? 's' : ''}
+                {filteredTodos.length} task
+                {filteredTodos.length !== 1 ? "s" : ""}
               </div>
             </div>
 
@@ -536,7 +573,10 @@ export default function Dashboard({ user, onLogout }) {  // Accept props from pa
                             placeholder="Description"
                           />
                           <div className="edit-actions">
-                            <button onClick={() => saveEdit(todo._id)} className="save-btn">
+                            <button
+                              onClick={() => saveEdit(todo._id)}
+                              className="save-btn"
+                            >
                               <FaCheck /> Save
                             </button>
                             <button onClick={cancelEdit} className="cancel-btn">
@@ -548,40 +588,59 @@ export default function Dashboard({ user, onLogout }) {  // Accept props from pa
                         <>
                           <div className="todo-main">
                             <button
-                              onClick={() => toggleComplete(todo._id, todo.completed)}
+                              onClick={() =>
+                                toggleComplete(todo._id, todo.completed)
+                              }
                               className={`complete-btn ${todo.completed ? "checked" : ""}`}
-                              aria-label={todo.completed ? "Mark as incomplete" : "Mark as complete"}
+                              aria-label={
+                                todo.completed
+                                  ? "Mark as incomplete"
+                                  : "Mark as complete"
+                              }
                             >
                               {todo.completed && <FaCheck />}
                             </button>
-                            
+
                             <div className="todo-content">
                               <div className="todo-header">
-                                <h4 className={`todo-title ${todo.completed ? "completed" : ""}`}>
+                                <h4
+                                  className={`todo-title ${todo.completed ? "completed" : ""}`}
+                                >
                                   {todo.title}
                                 </h4>
-                                <span className={`priority-badge ${todo.priority || "medium"}`}>
+                                <span
+                                  className={`priority-badge ${todo.priority || "medium"}`}
+                                >
                                   {todo.priority || "medium"}
                                 </span>
                               </div>
-                              
+
                               {todo.description && (
-                                <p className="todo-description">{todo.description}</p>
+                                <p className="todo-description">
+                                  {todo.description}
+                                </p>
                               )}
-                              
+
                               <div className="todo-footer">
                                 {todo.dueDate && (
-                                  <div className={`due-date ${getDueDateStatus(todo.dueDate)}`}>
+                                  <div
+                                    className={`due-date ${getDueDateStatus(todo.dueDate)}`}
+                                  >
                                     <FaCalendarAlt />
                                     <span>
-                                      {getDueDateStatus(todo.dueDate) === "today" && "Today"}
-                                      {getDueDateStatus(todo.dueDate) === "tomorrow" && "Tomorrow"}
-                                      {getDueDateStatus(todo.dueDate) === "overdue" && "Overdue"}
-                                      {getDueDateStatus(todo.dueDate) === "future" && format(parseISO(todo.dueDate), "MMM d")}
+                                      {getDueDateStatus(todo.dueDate) ===
+                                        "today" && "Today"}
+                                      {getDueDateStatus(todo.dueDate) ===
+                                        "tomorrow" && "Tomorrow"}
+                                      {getDueDateStatus(todo.dueDate) ===
+                                        "overdue" && "Overdue"}
+                                      {getDueDateStatus(todo.dueDate) ===
+                                        "future" &&
+                                        format(parseISO(todo.dueDate), "MMM d")}
                                     </span>
                                   </div>
                                 )}
-                                
+
                                 <div className="todo-actions">
                                   <button
                                     onClick={() => startEditing(todo)}
@@ -608,7 +667,7 @@ export default function Dashboard({ user, onLogout }) {  // Accept props from pa
                 </div>
               </AnimatePresence>
             ) : (
-              <motion.div 
+              <motion.div
                 className="empty-state"
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -618,7 +677,9 @@ export default function Dashboard({ user, onLogout }) {  // Accept props from pa
                 </div>
                 <h3>No tasks found</h3>
                 <p>
-                  {query ? "Try a different search term" : "Get started by adding a new task!"}
+                  {query
+                    ? "Try a different search term"
+                    : "Get started by adding a new task!"}
                 </p>
                 <button
                   onClick={() => setShowForm(true)}
